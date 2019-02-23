@@ -1,0 +1,392 @@
+---
+title: "Homework 1"
+author: "Austin Lee"
+date: "January 23, 2019"
+output:
+  pdf_document: default
+  html_document: default
+Class: Econ 144
+---
+
+This is Homework 1, Problem 1. This first block is to load all of the necessary libraries I used to finish the homework.
+I used the describe function to gather more information about the dataset. options(scipen =999) allows us to look at the numeric values without scientific notation.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+#install.packages('leaps',repos ="Http://cran.us.r-project.org")
+require('leaps')
+library('olsrr')
+library('psych')
+library('DAAG')
+library('corrplot')
+library('MASS')
+library('dynlm')
+library('car')
+library('stats')
+
+describe(nsw74psid1)
+options(scipen=999)
+attach(nsw74psid1)
+
+
+```
+
+
+#Part A
+
+Trt is an indicator variable that represents whether the subjects were enrolled in the treatment program or not. If they apart of the treatment group, they were cateogorized with the bar at one, else they are categorized as 0. The data shows that more participants were not within the treatment group. 
+
+```{r trt}
+hist(trt, col = 'steelblue2', main = 'Study in Which Subjects were Enrolled in the Treatment', xlab = '(0 = Not Treated, 1 = Treated)', ylab ='Count')
+```
+
+Age represents the age of each participant in the study. It seems the histogram would indicate that there is a bias
+in age. The histogram would indicate a bimodal distribution that is skewed slightly right.
+
+
+```{r age}
+truehist(age,col = 'steelblue2', main = 'Age', xlab = 'Years', xlim = c(17,60), ylim = c(0,.06))
+lines(density(age),lwd=2)
+```
+
+educ represents the amount of education each participant had in the study. It seems most of the subjects education peaked below 12 years.
+```{r educ}
+truehist(educ,col = 'steelblue2', main ="Education", xlab = "Years")
+lines(density(educ),lwd=2)
+```
+
+
+black is an indicator variable that represents whether the subjects are black or not. Most participants were not black.If they were, its represented by the bar at 1, or else they are categorized on the 0.
+
+```{r black}
+hist(black,col = 'steelblue2',main ='Black', xlab = '0=nonblack, 1 = black ',ylab = 'count')
+```
+
+hisp is an indicator variable that represents whether the subjects are Hispanic or not. Most of the participants were not Hispanic. If they were, its represented by the bar at 1, or else they are categorized on the 0.
+
+```{r hisp}
+hist(hisp,col = 'steelblue2', main ='Hispanic', xlab= '0=nonhispanic, 1 = hispanic')
+```
+
+marr is an indicator variable that represents whether the subjects are married or not. Approximately 82%of those who participated in the study were married. If they were, its represented by the bar at 1, or else they are categorized on the 0.
+
+```{r marr}
+hist(marr,col = 'steelblue2',main = 'Married', xlab = '0=Not Married, 1 = Married')
+```
+
+nodeg is an indicator variable that represents whether the subjects graduated high school or not Approxmiately 33% of the subjects did not graduate. If they did not graduate, its represented by the bar at 1, or else they are categorized on the 0.
+
+```{r nodeg}
+hist(nodeg,col = 'steelblue2',main = "High School Graduate", xlab = "0= Didn't Graduate, 1 = Graduated")
+```
+
+The histogram indicates a right skewed graph with bimodal modes at 0 and 20,000
+
+```{r re74}
+truehist(re74,col = 'steelblue2', main = 'Real Earnings in 74', xlab = 'Annual Earnings')
+lines(density(re74),lwd=2)
+```
+
+The histogram indicates a right skewed graph with bimodal means at 0 and around 20000  
+
+```{r re75}
+truehist(re75,col = 'steelblue2',main = 'Real Earnings in 75', xlab = 'Annual Earnings')
+lines(density(re75),lwd=2)
+```
+
+The histogram indicates a right skewed graph with bimodal means at 0 and around 25000
+
+```{r re78}
+truehist(re78,col = 'steelblue2',main = 'Real Earnings in 78', xlab = 'Annual Earnings')
+lines(density(re78),lwd=2)
+```
+
+#Part B
+
+After regressing the model, we have a R^2  .2102 which indicates statistical measure of statistical measure of how close the dependent variable is explained by the explanatory variables collectively.
+It appears the trt, black, and nodeg have low t-values, rendering their predictive powers statistically insignificant
+
+
+```{r regress1}
+mod1 <- lm(re78 ~ trt + age + educ+ black + hisp + marr + nodeg+re74+re75, data = nsw74psid1)
+summary(mod1)
+```
+
+#Part C
+
+The Mallows CP statistic estimates the size of bias introduced into the predicted response. In a regression model variance and bias are at play which impede a model's predicting power. To pick the model with the least amount of bias, so that we may also pick the lowest variation. Models with CP Mallows values a lot larger than its predictors indicate there is substantial bias. The best CP Mallows values are the ones that are only slightly above their predictors. Therefore, the best model we should use is the model with predictors: age, educ, hisp, marr, marr, r74, r75 because its cp is 6.59499, the model closest to the number of predictors.
+
+```{r regress}
+leaps(x = nsw74psid1[,1:9], y = nsw74psid1[,10], names = names(nsw74psid1)[1:9],method = 'Cp')
+
+ss = regsubsets(re78 ~ trt + age + educ + black + hisp + marr + nodeg+re74+re75, method = c('exhaustive'),nbest = 3, data = nsw74psid1)
+subsets(ss,statistic = "cp", legend = F, main = 'Mallows CP', min.size =5 )
+legend(6,700,legend=c('t = treatment', 'a = age', 'e = education', 'b = black', 'h = hispanic',' m = married',' n =no degee'), cex = .5, bty = "y")
+```
+
+#Part D
+
+Plotting fitted vs residuals values
+
+```{r regress2}
+mod2 <-lm(re78 ~ age + educ + hisp + marr+ re74 +re75, data = nsw74psid1)
+plot(mod2$fitted.values, mod2$residuals, xlab = "residuals", ylab = "fitted values")
+abline(0,0, col = "dark red")
+```
+
+#Part E
+
+Our vif factors are close to 1. Our model is stronger because there is less multicolinearity.
+
+```{r vif}
+vif(mod2)
+```
+
+#Part F
+
+There is very high correlation between education and nodeg. This is a good reason why the Mallows CP suggested to take nodeg out and limit bias within the model. Although there is high correlation between re74 and re75, it is heavily correlated to re78, which may amplify the model's predicting power, justifying their relevance.
+
+```{r corrplot}
+corrplot(cor(nsw74psid1),method= "number")
+```
+
+#Part G
+
+It appears that there are a few outliers, but their Cook's Distance values are less than 1, so it would be inappropriate to drop outliers as they may hold legitimacy. It is important to investigate into 
+those few outlier datapoints to determine why they deviate from the mean.
+
+```{r cooks distance}
+mod2_cooks = cooks.distance(mod2)
+plot(mod2_cooks, ylab="Cook's distance",type='o',main="Cook's Distance Plot",col="skyblue4", pch=20,lwd=.25)
+
+```
+
+#Part H
+
+Residuals are mostly centered at 0, which is a good indication that the model is close to meeting the requirement for the Gauss Markov assumption. However the histogram plot seems to skew right, indicating that the distribution of residuals arent exactly perfectly distributed at 0.
+
+```{r mod2hist}
+truehist(mod2$res,col = 'steelblue2', main = 'Residuals', xlab = 'Annual Earnings')
+lines(density(mod2$res),lwd=2)
+```
+
+#Part I
+
+The dots in the qqnorm plot do not fit a straight line, the residual distribution do not follow a normal distribution
+as indicated by the histogram above. the qqnormal plot also indicates that the residual distribution is skewed right, as mentioned previously.
+
+```{r qqnorm}
+qqnorm(mod2$res,col="skyblue4", pch=20,lwd=1,main="QQ Normal Plot")
+
+```
+
+#Part J
+
+Locally Weighted Smoothing helps with graphically visualization of a regression line, where lots of noisy data is present.There also seems to be a lot of observed responses where real earnings = 0, our predicted model does not have the same.To enhance our model, we may need to somehow account for the observed values at 0. A valuable question to survey is  whether these observed data points are unemployed or not, so further investigation may be realized. 
+
+```{r lowess}
+
+plot(mod2$fitted.values,re78,pch=20,col="skyblue4",cex=1,xlab="Predicted Response",ylab="Observed Response",main="Observed vs. Predicted Response \n Full Model")
+lines(lowess(mod2$fitted.values,re78))
+abline(0,1,col="red",lwd=2,lty=2)
+
+```
+
+#Problem Two
+
+```{r data}
+data2 <- read.table(file ='c:\\Users\\Austin\\Documents\\R\\Copy_of_Chapter2_exercises_data.csv', header = T, sep = ",")
+attach(data2)
+
+describe(data2$GRGDP)
+describe(data2$RETURN)
+```
+
+The histograms seem to both be left skewed.
+
+```{r histprob2}
+hist(data2$GRGDP,col = 'steelblue3', main = "U.S GDP Quarterly Growth Rates", xlab = "GDP Growth")
+hist(data2$RETURN, col = 'steelblue3', main= "S&P 500 Quarterly Returns", xlab = "S&P Returns")
+
+```
+
+The correlation is .2702427. GDP growth is positively correlated, but is not a perfect indication of the S&P 500.
+
+```{r cor}
+cor(data2$GRGDP, data2$RETURN)
+```
+
+#Problem Three
+
+Here, I load in the data and create the time series for real personal consumption expenditure, real disposable personal income
+
+``` {r rpc}
+data <- read.table(file ='C:\\Users\\Austin\\Documents\\R\\rpe rdi.csv', header =T, sep = ",")
+ts_rpce <- ts(data$rpce, start = 1959, freq = 12)
+ts_rdpi <- ts(data = data$rdpi, start= 1959, freq = 12)
+```
+
+Now, I calculate the growth rate for real personal consumption expenditure and plot its time series.
+
+```{r  growth rpce}
+log_ts_rpce <- log(ts_rpce)
+log_ts_rpce_diff <- diff(log_ts_rpce,lag =1)
+plot(log_ts_rpce_diff,ylab = "Growth Rate Real Personal Consumption", main = "Real Personal Consumption Expenditure Growth Rate")
+```
+
+Afterwards, I plot the growth for real disposable personal income.
+
+``` {r  growth rdpi}
+log_ts_rdpi <-log(ts_rdpi)
+log_ts_rdpi_diff <- diff(log_ts_rdpi, lag =1)
+plot(log_ts_rdpi_diff, ylab = "Growth Rate Real Disposable Personal Income", main = "Growth Rate Real Disposable Personal Income")
+```
+
+Using Macroeconomic theory, we may come to understand why real personal disposable income is more volatile than real consumption expenditure. In theory, a person's consumption is not determined by their current income, but by their expected income in future years, which would lead to consumption smoothing.The data suggests that real disposable income peaks and 6% and -4% maximum and minimum, whereas personal consumption expenditure never rises above or below 3% absolute. As a rational actor, a person will consume based on what he or she expects in the future. An increase in temporary disposable income does not mean the person will use it all; their consumption will be smooth over time.
+
+
+#Part B
+
+Our coefficients are statistically significant, however, the R^2d is low, which
+may indicate that real disposable personal income does not precisely explain the growth rate of consumption expenditure entirely.
+***Interpretation***: if real disposable income increases by 1%,
+we expect real personal expenditure consumption to increase by .17%
+``` {r rpce rdi}
+mod1 <- lm(log_ts_rpce_diff ~ log_ts_rdpi_diff)
+summary(mod1)
+```
+
+
+
+
+#Part C
+
+This model has a slightly higher R^2, and both coefficients are statistically significant. Adding a lag would theoretically make sense sense because our model acquires more information pertaining to the next year and what future real disposable personal income may be.
+
+```{r dynlm}
+mod2 <-dynlm(log_ts_rpce_diff ~ log_ts_rdpi_diff+ L(log_ts_rdpi_diff,1))
+summary(mod2)
+```
+
+#Problem 4
+
+Here, I download GDP, Yen to Dollar Exchange, Ten yield rates, and unemployment rate
+
+```{r gdpyendoltenyieldunemploy}
+
+GDP <- read.table(file ='C:\\Users\\Austin\\Documents\\R\\GDPC1.csv', header = T, sep = "," )
+yendol <- read.table(file = 'C:\\Users\\Austin\\Documents\\R\\EXJPUS.csv', header = T, sep = ",")
+tenyield <- read.table(file = 'C:\\Users\\Austin\\Documents\\R\\GS10.csv', header =T, sep = ",")
+unemploy <- read.table(file = 'C:\\Users\\Austin\\Documents\\R\\UNRATE.csv', header = T, sep = ",")
+```
+
+This is not first order or second order weakly stationary because it does not revert to any mean on a consistent basis.
+
+```{r usgdp}
+ts_GDP <-ts(data = GDP$GDPC1, start = 1947, freq = 4)
+seq_GDP <- seq(1947,2018, length = length(ts_GDP))
+plot(ts_GDP, main = "U.S GDP", ylab = "U.S. GDP")
+```
+
+This is not first order or second order weakly stationary because it does not revert to any mean on a consistent basis.
+
+```{r yendol}
+ts_yendol <- ts(data = yendol$EXJPUS, start = 1971, freq = 12)
+plot(ts_yendol, main = "Yen to Dollar Exchange Rate", ylab ="Yen to Dollar Exchange")
+```
+
+This is not first order or second order weakly stationary, it does not revert to any mean on a consistent basis
+
+```{r tenyield}
+ts_tenyield <- ts(data = tenyield$GS10, start = 1953, freq = 12)
+plot(ts_tenyield, main = "Ten Year U.S Yield Maturity Rate", ylab = "Ten Year U.S Yield Maturity Rate")
+
+```
+
+More data would suggest a first order weakly stationary, however, there is insignificant oscilation at any particular mean. Therefore, it does not revert to any mean on a consistent basis
+
+```{r unemploy}
+ts_unemploy <- ts(data = unemploy$UNRATE, start = 1948, freq = 12)
+summary(unemploy$UNRATE)
+plot(ts_unemploy, main =  "Unemployment Rate in the U.S", ylab = "Unemployment Rate in the U.S")
+
+```
+
+#Problem 5
+Here, I load the data and create the time series for prices, interest rates, price growth, and interest rate growth
+
+```{r hw143}
+data1 <- read.table(file = 'C:\\Users\\Austin\\Documents\\R\\HW143.csv', header =T, sep = ",")
+ts_prices <- ts(data1$P,start = 1980, freq = 4)
+ts_int_rate <- ts(data1$R..in..., start = 1980, freq = 4)
+ts_prices_growth <- diff(log(ts_prices),1)
+ts_int_rate_growth <- diff(log(ts_int_rate),1)
+```
+
+Autocorrelation gives us information about temporal advantages and patterns in specific time series. For extended periods for a time series, the autocorrelation function explains whether they are correlated at seperated points. The partial autocorrelated function removes separated observations when comparing between distant lags. As points become more separated, we may expect ACF and PACF to be 0 if the time series is not time dependent.
+
+According to acf, there is a great autocorrelation dependence within the time series. However, when we break down into the partial acf, we see a lack in time dependence.
+
+```{r acfprice}
+acf(ts_prices)
+pacf(ts_prices)
+```
+
+
+similarly, there is a great autocorrelation dependence within the time series, according to acf function. However, like the pacf for ts_prices, ts_int_rate, lack in time dependence when using pacf.
+
+```{r acfintrate}
+acf(ts_int_rate)
+pacf(ts_int_rate)
+```
+
+After the intial 3 lags, we begin to see a lack in time dependence for price growth according to the acf function. Likewise in the previous examples, we see that pacf also indicates no significant time dependence.
+
+```{r acfpriceg}
+acf(ts_prices_growth)
+pacf(ts_prices_growth)
+
+```
+
+Interest rate growth shows a lack in time dependence according to acf and pacf.
+
+According to the acf and pacf functions, it appears as though there is a greater time dependence with prices and interest rates as opposed to their growth rate counterparts. I would not intuitively expect this answer.
+
+```{r intgrowth}
+acf(ts_int_rate_growth)
+pacf(ts_int_rate_growth)
+
+```
+
+#Annual Data Used
+
+Now, we look at annual data instead of monthly and load in the time series.
+
+```{r hw143pt2}
+data3 <- read.table(file = 'C:\\Users\\Austin\\Documents\\R\\HW143pt2.csv', header = T, sep = ",")
+ts_annual_prices <- ts(data3$P[7:38], start = 1980, freq = 1)
+ts_annual_int_rates <- ts(data3$R..in...[7:38], 1980, freq =1)
+ts_annual_prices_growth <- diff(log(ts_annual_prices), lag =1)
+ts_annual_int_rates_growth <- diff(log(ts_annual_int_rates), lag =1)
+```
+
+```{r acfanprice}
+acf(ts_annual_prices,na.action = na.pass)
+```
+
+```{r acfanintrates}
+acf(ts_annual_int_rates,na.action = na.pass)
+```
+
+```{r acfanpriceg}
+acf(ts_annual_prices_growth,na.action = na.pass)
+```
+
+```{r acfanintratesg}
+acf(ts_annual_int_rates_growth,na.action = na.pass)
+```
+
+The time dependence is less pronounced because there is a greater time interval between monthly and annually. The lags in the annual years represent a larger time gap, so after the first 5 lags, there is less time dependence. For the quarterly lags, there is more time dependence because of the shorter time span, so the acf shows time dependence for all lags for prices and interest rates after 5 lags. 
