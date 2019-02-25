@@ -8,8 +8,7 @@ output:
 Class: Econ 144
 ---
 
-This is Homework 1, Problem 1. This first block is to load all of the necessary libraries I used to finish the homework.
-I used the describe function to gather more information about the dataset. options(scipen =999) allows us to look at the numeric values without scientific notation.
+This is Homework 1, Problem 1. This first block is to load all of the necessary libraries I used to finish the homework.I used the describe function to gather more information about the dataset. options(scipen =999) allows us to look at the numeric values without scientific notation.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
